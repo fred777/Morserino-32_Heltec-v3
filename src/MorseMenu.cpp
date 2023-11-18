@@ -423,6 +423,7 @@ boolean MorseMenu::menuExec() {                                          // retu
                 // re-run the setup, this will reset the character probabilities
                 koch.setup();
                 goto startEcho;
+#ifndef DISABLE_LORA                
       case  _trxLora: // LoRa Transceiver
                 generatorMode = RANDOMS;  // to reset potential KOCH_LEARN
                 MorsePreferences::setCurrentOptions(MorsePreferences::loraTrxOptions, MorsePreferences::loraTrxOptionsSize);
@@ -434,6 +435,7 @@ boolean MorseMenu::menuExec() {                                          // retu
                 executeNow = false;
                 return true;
                 break;
+#endif                
       case  _trxWifi: // Wifi Transceiver
                 generatorMode = RANDOMS;  // to reset potential KOCH_LEARN
                 MorsePreferences::setCurrentOptions(MorsePreferences::wifiTrxOptions, MorsePreferences::wifiTrxOptionsSize);

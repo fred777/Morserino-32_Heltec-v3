@@ -40,6 +40,8 @@
 #include "MorseDecoder.h"     // Decoder Engine
 
 
+void jsonConfigLong(MorsePreferences::parameter p);
+
 // define the buttons for the clickbutton library, & other classes that we need
 
 /// variables, value defined at setup()
@@ -121,8 +123,11 @@ String vsn, brd;              // strings to hold firmware version and board vers
 unsigned int interCharacterSpace, interWordSpace;   // need to be properly initialised!
 unsigned int halfICS;                               // used for word doubling: half of extra ICS
 unsigned int effWpm;                                // calculated effective speed in WpM
+
+#ifndef DISABLE_TOUCH_PADDLES
 unsigned int lUntouched = 0;                        // sensor values (in untouched state) will be stored here
 unsigned int rUntouched = 0;
+#endif 
 
 boolean alternatePitch = false;                     // to change pitch in CW generator / file player
 
@@ -161,6 +166,7 @@ unsigned int dahLength ;        // dahs are 3 dits long
 KEYERSTATES keyerState;
 unsigned long charCounter = 25; // we use this to count characters after changing speed - after n characters we decide to write the config into NVS
 uint8_t sensor;                 // what we read from checking the touch sensors
+
 boolean leftKey, rightKey;
 
 
@@ -386,18 +392,32 @@ void setup()
   // reserve 200 bytes for the serial inputString variable defiend above:
   inputString.reserve(255);
 
-
   MorsePreferences::determineBoardVersion();
   // now set pins according to board version
-  if (MorsePreferences::boardVersion == 3) {
-    batteryPin = 13;
-    leftPin = 33;
-    rightPin = 32;
-  } else {        // must be board version 4
-    batteryPin = 37;
-    Buttons::modeButton.activeHigh = HIGH;      // in contrast to board v.3, in v4. the active state is HIGH not LOW
-    leftPin = 32;
-    rightPin = 33;
+  switch (MorsePreferences::boardVersion)
+  {
+    case 3:          
+      batteryPin = 13;
+      leftPin = 33;
+      rightPin = 32;
+      break;
+
+    case 4:
+      batteryPin = 37;
+      Buttons::modeButton.activeHigh = HIGH;      // in contrast to board v.3, in v4. the active state is HIGH not LOW
+      leftPin = 32;
+      rightPin = 33;
+      break;
+
+    case 5:
+      batteryPin = A0;
+      leftPin = 45;
+      rightPin = 46;
+      break;
+
+    default:
+      DEBUG("using pin defaults");
+
   }
 
 
@@ -418,7 +438,7 @@ void setup()
   //enable Vext
   digitalWrite(Vext,LOW);
 
- //DEBUG("Volt: " + String(volt));
+  DEBUG("Volt: " + String(volt));
 
   // set up the encoder - we need external pull-ups as the pins used do not have built-in pull-ups!
   pinMode(PinCLK,INPUT_PULLUP);
@@ -433,7 +453,13 @@ void setup()
 
 
  // init display, LoRa
-  Heltec.begin(true /*DisplayEnable Enable*/, true /*LoRa Enable*/, true /*Serial Enable*/, true /*LoRa use PABOOST*/, BAND /*LoRa RF working band*/);
+  Heltec.begin(true /*DisplayEnable Enable*/, 
+#ifdef DISABLE_LORA
+    false
+#else
+    true
+#endif
+    /*LoRa Enable*/, true /*Serial Enable*/, true /*LoRa use PABOOST*/, BAND /*LoRa RF working band*/);
   Heltec.display -> setBrightness(MorsePreferences::oledBrightness);
   MorseOutput::clearDisplay();
   MorseOutput::printOnStatusLine( true, 0, "Init...pse wait...");   /// gives us something to watch while SPIFFS is created at very first start
@@ -474,8 +500,10 @@ void setup()
             case 1: 
                     MorsePreferences::calibrateVoltageMeasurement();
                     break;
+#ifndef DISABLE_LORA                    
             case 2: MorsePreferences::loraSystemSetup();
                     break;
+#endif                    
             default: break;
          }
       }
@@ -493,7 +521,7 @@ void setup()
 
 
 ////////////  Setup for LoRa
-
+#ifndef DISABLE_LORA
   LoRa.setFrequency(MorsePreferences::loraQRG+0000);                       /// default = 434.150 MHz - Region 1 ISM Band, can be changed by system setup
   LoRa.setSpreadingFactor(7);                         /// default
   LoRa.setSignalBandwidth(250E3);                     /// 250 kHz
@@ -504,6 +532,8 @@ void setup()
   
   // register the receive callback
   LoRa.onReceive(onLoraReceive);
+#endif 
+
   /// initialise the serial number
   cwTxSerial = random(64);
 
@@ -1119,6 +1149,7 @@ boolean checkPaddles() {
   */
   left = MorsePreferences::pliste[posExtPddlPolarity].value ? rightPin : leftPin;
   right = MorsePreferences::pliste[posExtPddlPolarity].value ? leftPin : rightPin;
+
   sensor = readSensors(LEFT, RIGHT, false);
   newL = (sensor >> 1);
   newR = (sensor & 0x01);
@@ -1196,6 +1227,9 @@ void togglePolarity () {
 /// binary:   00          01                10                11
 
 uint8_t readSensors(int left, int right, boolean init) {
+#ifdef DISABLE_TOUCH_PADDLES
+  return 0;
+#else
   //long int timer = micros();
   //static boolean first = true;
   uint8_t v, lValue, rValue;
@@ -1224,10 +1258,12 @@ uint8_t readSensors(int left, int right, boolean init) {
     else
       return 0; 
   }
+#endif
 }
 
 
 void initSensors() {
+#ifndef DISABLE_TOUCH_PADDLES
   int v;
   lUntouched = rUntouched = 60;       /// new: we seek minimum
   for (int i=0; i<8; ++i) {
@@ -1244,6 +1280,7 @@ void initSensors() {
   rUntouched /= 8;
   MorsePreferences::tLeft = lUntouched - 9;
   MorsePreferences::tRight = rUntouched - 9;
+#endif
 }
 
 
@@ -1984,6 +2021,8 @@ String cleanUpProSigns( String &input ) {
 
 int16_t batteryVoltage() {      /// measure battery voltage and return result in milliVolts
   
+  return 4000;
+
       // board version 3 requires Vext being on for reading the battery voltage
       if (MorsePreferences::boardVersion == 3)
          digitalWrite(Vext,LOW);

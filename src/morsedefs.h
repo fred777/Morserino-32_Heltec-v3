@@ -15,6 +15,8 @@
 #ifndef MORSEDEFS_H
 #define MORSEDEFS_H
 
+
+
 #include "Arduino.h"
 #include "heltec.h"
 #include <ArduinoJson.h>
@@ -69,10 +71,52 @@ namespace Buttons
 ///// its is crucial to have the right board version - Boards 2 and 2a (prototypes only) set it to 2, Boards 3 set it to 3
 ///// the Board Version 2 is for HEltec Modules V1 only, Board Version 3 for Heltec V2 only
 ///// Board version 1 not supported anymore!
+// 5: Heltec v3
+
+#define BOARDVERSION  5
 
 
-///#define BOARDVERSION  4
+#if BOARDVERSION==5
 
+#define DISABLE_TOUCH_PADDLES
+#define DISABLE_LORA
+
+/// where is the encoder?
+const int PinCLK=A3;                   // Used for generating interrupts using CLK signal - needs external pullup resisitor! 
+const int PinDT=A2;                    // Used for reading DT signal  - needs external pullup resisitor! 
+
+/// encoder switch (BLACK knob)
+const int modeButtonPin = A1;
+
+/// 2nd switch button - toggles between Speed control and Volume control (RED button)
+//const int volButtonPin = A4;
+const int volButtonPin = 0; // 0 = user switch
+
+
+//// with the following we define which pins are used as output for the two pwm channels
+//// HF output (with varying duticycle and fixed frequency) and LF output (with varying frequency and fixed dutycycle of 50%)
+/// are being added with a 2-transistor AND gate to create a tone frequency with variable frequency and volume
+
+const int LF_Pin = 34;    // for the lower (= NF) frequency generation
+const int HF_Pin = 33;    // for the HF PWM generation
+
+
+/// where are the touch paddles?
+const int LEFT = A5;        // = Pin 2
+const int RIGHT = A6;       // = Pin 12
+
+// Tx keyer 
+const int keyerPin = LED;        // this keys the transmitter / through a MOSFET Optocoupler - at the same time lights up the LED
+
+
+// audio in
+const int audioInPin = 19;      // audio in for Morse decoder // 
+
+
+// NF Line-out (for iCW etc.)
+const int lineOutPin = 20; // for NF line out
+
+#else 
 
 ///////////////////////////////      H A R D W A R E      ///////////////////////////////////////////
 //// Here are the definitions for the various hardware-related I/O pins of the ESP32
@@ -133,12 +177,12 @@ const int audioInPin = 36;      // audio in for Morse decoder //
 
 // NF Line-out (for iCW etc.)
 const int lineOutPin = 17; // for NF line out
-
+#endif
 
 // SENS_FACTOR is used for auto-calibrating sensitivity of touch paddles (somewhere between 2.0 and 2.5)
 #define SENS_FACTOR 2.22
 
-#define BAND    433E6  //you can set band here directly,e.g. 868E6,915E6
+#define BAND    868E6  //you can set band here directly,e.g. 868E6,915E6
 
 
 ///////////////////////////////////////// END OF HARDWARE DEFS ////////////////////////////////////////////////////////////////////

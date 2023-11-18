@@ -304,7 +304,7 @@ parameter MorsePreferences::pliste[] = {
     {"Standard", "Secondary"}
   },
   {
-    5, 0, 5, 1,                                                 // output characters on USB serial? 0 = none (but DEBUG/ERR) 1= keyed, 2 = decode, 3=both, 4=generated, 5=all
+    0, 0, 5, 1,                                                 // output characters on USB serial? 0 = none (but DEBUG/ERR) 1= keyed, 2 = decode, 3=both, 4=generated, 5=all
     "Serial Output",
     "Select what is sent to the serial (USB) port",
     true,
@@ -318,7 +318,7 @@ String extraItems[] = {"Koch Lesson", "LoRa Band",  "LoRa Frequ", "LoRa Power", 
 
 
 uint8_t MorsePreferences::loraBand = 0;                     // 0 = 433, 1 = 868, 2 = 920
-uint32_t MorsePreferences::loraQRG = QRG433;                // for 70 cm band
+uint32_t MorsePreferences::loraQRG = QRG866;                // for 70 cm band
 uint8_t MorsePreferences::loraPower = 14;                   // default 14 dBm = 25 mW
 
 
@@ -1291,25 +1291,31 @@ void MorsePreferences::determineBoardVersion() {
     MorsePreferences::boardVersion = pref.getUChar("boardVersion");
     delay(1000);
     if (MorsePreferences::boardVersion == 0) {                    // no board version had been set previously, so we determine and set it here
-        const int oldbatt = 13;                                     // we measure voltage at pin 13; if V close to zero we have a 2.1 Heltec, so board 4
 
-        analogSetAttenuation(ADC_0db);
-        adcAttachPin(oldbatt);
-        analogSetClockDiv(128);           //  this value was found by experimenting - no clue what it really does :-(
-        analogSetPinAttenuation(oldbatt,ADC_11db);
-        if(analogRead(oldbatt) > 1023) {
-          MorsePreferences::boardVersion = 3;
-          // DEBUG("boardV: 3");
-        }
-        else {MorsePreferences::boardVersion = 4; //DEBUG("boardV: 4");
-        }
-        pref.putUChar("boardVersion", MorsePreferences::boardVersion);
+      if(BOARDVERSION<5)
+      {
+          const int oldbatt = 13;                                     // we measure voltage at pin 13; if V close to zero we have a 2.1 Heltec, so board 4
+
+          analogSetAttenuation(ADC_0db);
+          adcAttachPin(oldbatt);
+          analogSetClockDiv(128);           //  this value was found by experimenting - no clue what it really does :-(
+          analogSetPinAttenuation(oldbatt,ADC_11db);
+          if(analogRead(oldbatt) > 1023) {
+            MorsePreferences::boardVersion = 3;
+            // DEBUG("boardV: 3");
+          }
+          else {MorsePreferences::boardVersion = 4; //DEBUG("boardV: 4");
+          }
+      }
+      else MorsePreferences::boardVersion = BOARDVERSION;
+
+      pref.putUChar("boardVersion", MorsePreferences::boardVersion);
     }
     pref.end();
 }
 
 
-//////// System Setup / LoRa Setup ///// Called when BALCK knob is pressed @ startup
+//////// System Setup / LoRa Setup ///// Called when BLACK knob is pressed @ startup
 
 void MorsePreferences::loraSystemSetup() {
     MorsePreferences::displayKeyerPreferencesMenu(posLoraBand);
