@@ -1292,7 +1292,7 @@ void MorsePreferences::determineBoardVersion() {
     delay(1000);
     if (MorsePreferences::boardVersion == 0) {                    // no board version had been set previously, so we determine and set it here
 
-      if(BOARDVERSION<5)
+      if(BOARDVERSION<5) // TODO: fix that for Heltec v3
       {
           const int oldbatt = 13;                                     // we measure voltage at pin 13; if V close to zero we have a 2.1 Heltec, so board 4
 

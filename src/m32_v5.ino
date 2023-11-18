@@ -40,8 +40,6 @@
 #include "MorseDecoder.h"     // Decoder Engine
 
 
-void jsonConfigLong(MorsePreferences::parameter p);
-
 // define the buttons for the clickbutton library, & other classes that we need
 
 /// variables, value defined at setup()
@@ -2021,27 +2019,28 @@ String cleanUpProSigns( String &input ) {
 
 int16_t batteryVoltage() {      /// measure battery voltage and return result in milliVolts
   
-  return 4000;
+    // TODO: fix that for heltec v3
+    return 4000;
 
-      // board version 3 requires Vext being on for reading the battery voltage
-      if (MorsePreferences::boardVersion == 3)
-         digitalWrite(Vext,LOW);
-      // board version 4 requires Vext being off for reading the battery voltage
-      else if (MorsePreferences::boardVersion == 4)
-         digitalWrite(Vext,HIGH);
+    // board version 3 requires Vext being on for reading the battery voltage
+    if (MorsePreferences::boardVersion == 3)
+        digitalWrite(Vext,LOW);
+    // board version 4 requires Vext being off for reading the battery voltage
+    else if (MorsePreferences::boardVersion == 4)
+        digitalWrite(Vext,HIGH);
 
-      double v= 0; int counts = 4;
-      for (int i=0; i<counts   ; ++i) {
-         v+= ReadVoltage(batteryPin);
-         delay(8);
-         //DEBUG(String(v,4));
-      }
-      v /= counts;
-      if (MorsePreferences::boardVersion == 4)      // adjust measurement for board version 4
-        v *= 1.1;
-      voltage_raw = v;
-      v *= (MorsePreferences::vAdjust * 12.9);      // adjust measurement and convert to millivolts
-      return (int16_t) v;                                                                                       
+    double v= 0; int counts = 4;
+    for (int i=0; i<counts   ; ++i) {
+        v+= ReadVoltage(batteryPin);
+        delay(8);
+        //DEBUG(String(v,4));
+    }
+    v /= counts;
+    if (MorsePreferences::boardVersion == 4)      // adjust measurement for board version 4
+      v *= 1.1;
+    voltage_raw = v;
+    v *= (MorsePreferences::vAdjust * 12.9);      // adjust measurement and convert to millivolts
+    return (int16_t) v;                                                                                       
 }
 
 
