@@ -315,6 +315,11 @@ uint8_t cwTxSerial;                                     /// a 6 bit serial numbe
 IPAddress peerIP;
 
 
+
+////////////////////////////////////////////////////////////////////
+void jsonConfigLong(MorsePreferences::parameter p);
+
+
 ////////////////////////////////////////////////////////////////////
 // encoder subroutines
 /// interrupt service routine - needs to be positioned BEFORE all other functions, including setup() and loop()
